@@ -1,0 +1,58 @@
+name: "Build tvos app"
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build_without_signing:
+    runs-on: macos-latest
+    steps:
+      # Check Xcode version
+      - name: Check Xcode version
+        run: /usr/bin/xcodebuild -version
+
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Create dummy provisioning profile
+      - name: Create dummy provisioning profile
+        run: |
+          echo "RUNNER TEMP: $RUNNER_TEMP"
+          echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "<plist version=\"1.0\">" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "<dict>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "  <key>UUID</key>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "  <string>00000000-0000-0000-0000-000000000000</string>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "  <key>TeamIdentifier</key>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "  <array>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "    <string>YOUR_TEAM_ID</string>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "  </array>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "</dict>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+          echo "</plist>" >> $RUNNER_TEMP/DummyProfile.mobileprovision
+
+      # Build archive
+      - name: Build archive
+        run: |
+          cd _Project
+          xcodebuild -scheme "Browser" \
+          -archivePath $RUNNER_TEMP/app.xcarchive \
+          -sdk appletvos \
+          -configuration Release \
+          -destination generic/platform=tvOS \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGNING_ALLOWED=NO \
+          clean archive
+
+      # Upload application
+      - name: Upload RUNNER_TEMP directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner_temp
+          path: /Users/runner/work/_temp
+          retention-days: 3
