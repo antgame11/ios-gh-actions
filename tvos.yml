@@ -38,8 +38,7 @@ jobs:
       # Build archive
       - name: Build archive
         run: |
-          cd _Project
-          xcodebuild -scheme "Browser" \
+          xcodebuild -scheme "FOLDERNAMEOFIOSAPPHERE" \
           -archivePath $RUNNER_TEMP/app.xcarchive \
           -sdk appletvos \
           -configuration Release \
